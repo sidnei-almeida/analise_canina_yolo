@@ -217,12 +217,6 @@ Este projeto está otimizado para deploy no Streamlit Cloud:
 - ✅ Git LFS para modelos grandes (`weights/best.pt`)
 - ✅ Configurações otimizadas para CPU
 
-## 📚 Documentação Adicional
-
-- 📖 [DEPLOY.md](DEPLOY.md) - Guia completo de deploy
-- 📖 [INSTALACAO.md](INSTALACAO.md) - Guia de instalação local
-- 📖 [CONFIGURACAO.md](CONFIGURACAO.md) - Ajuste de thresholds e parâmetros
-
 ## 🤝 Contribuindo
 
 Contribuições são bem-vindas! Sinta-se à vontade para:
