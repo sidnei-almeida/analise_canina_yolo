@@ -1,0 +1,118 @@
+# ========================================
+# Configurações do Canine AI
+# ========================================
+# Arquivo de configuração para ajuste de parâmetros do modelo
+# Edite este arquivo para modificar os thresholds sem alterar o código
+
+# Parâmetros de Detecção
+detection:
+  # Confiança mínima para uma detecção ser considerada válida (0.0 - 1.0)
+  # Valores maiores = menos detecções, mas mais precisas
+  # Valores menores = mais detecções, mas pode incluir falsos positivos
+  confidence_threshold: 0.35
+  
+  # Threshold de IoU (Intersection over Union) para NMS (0.0 - 1.0)
+  # Controla a supressão de detecções sobrepostas
+  # Valores maiores = permite mais boxes sobrepostos
+  # Valores menores = suprime mais boxes sobrepostos
+  iou_threshold: 0.50
+  
+  # Número máximo de detecções por imagem
+  max_detections: 10
+  
+  # Tamanho da imagem para inferência (pixels)
+  # Valores maiores = mais preciso mas mais lento
+  # Valores comuns: 320, 416, 640, 1280
+  image_size: 640
+
+# Parâmetros de Visualização
+visualization:
+  # Espessura das linhas das bounding boxes
+  line_thickness: 2
+  
+  # Mostrar labels das classes
+  show_labels: true
+  
+  # Mostrar confiança nos labels
+  show_confidence: true
+  
+  # Formato da confiança: "percentage" ou "decimal"
+  confidence_format: "percentage"
+
+# Filtros de Classes
+filters:
+  # Habilitar filtro de classes específicas
+  enable_class_filter: false
+  
+  # Lista de IDs de classes para detectar (vazio = todas)
+  # Exemplo: [0, 1, 2] para detectar apenas as 3 primeiras raças
+  allowed_classes: []
+  
+  # Confiança mínima por classe (opcional)
+  # Use quando algumas raças precisam de threshold diferente
+  class_specific_confidence: {}
+    # Exemplo:
+    # 0: 0.3  # Raça ID 0 precisa apenas 30% de confiança
+    # 15: 0.5 # Raça ID 15 precisa 50% de confiança
+
+# Performance
+performance:
+  # Usar half precision (FP16) - mais rápido em GPUs compatíveis
+  # IMPORTANTE: Manter FALSE para deploy em Streamlit Cloud (CPU-only)
+  use_half_precision: false
+  
+  # Device para inferência: "cpu", "cuda", "cuda:0", etc.
+  # IMPORTANTE: Usar "cpu" para deploy em Streamlit Cloud
+  device: "cpu"
+  
+  # Usar TensorRT para otimização (requer instalação separada)
+  # IMPORTANTE: Não disponível em ambientes cloud
+  use_tensorrt: false
+
+# Interface
+interface:
+  # Número de colunas para exibir imagens de teste
+  test_images_columns: 4
+  
+  # Tamanho máximo de upload (MB)
+  max_upload_size_mb: 10
+  
+  # Formatos de imagem permitidos
+  allowed_formats: ["png", "jpg", "jpeg", "webp"]
+
+# Segurança
+security:
+  # Verificar dimensões da imagem antes de processar
+  check_image_dimensions: true
+  
+  # Dimensão máxima permitida (largura ou altura em pixels)
+  max_image_dimension: 4096
+  
+  # Dimensão mínima permitida (largura ou altura em pixels)
+  min_image_dimension: 32
+
+# Logging e Debug
+debug:
+  # Exibir tempo de inferência
+  show_inference_time: true
+  
+  # Salvar imagens processadas
+  save_predictions: false
+  
+  # Diretório para salvar predições
+  predictions_dir: "predictions"
+  
+  # Modo verbose (mais informações no console)
+  verbose: false
+
+# Cache
+cache:
+  # Habilitar cache do modelo
+  enable_model_cache: true
+  
+  # Habilitar cache de dados
+  enable_data_cache: true
+  
+  # TTL do cache em segundos (0 = infinito)
+  cache_ttl: 3600
+
