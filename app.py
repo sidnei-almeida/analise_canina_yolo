@@ -315,76 +315,96 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# Funções auxiliares
+# Funções auxiliares para caminhos de arquivos
+def get_project_root():
+    """Retorna o diretório raiz do projeto"""
+    return Path(__file__).parent
+
 @st.cache_data
 def load_config():
     """Carrega as configurações do arquivo config.yaml"""
+    config_path = get_project_root() / 'config.yaml'
     try:
-        with open('config.yaml', 'r') as f:
-            config = yaml.safe_load(f)
-        return config
+        if config_path.exists():
+            with open(config_path, 'r') as f:
+                config = yaml.safe_load(f)
+            return config
+        else:
+            st.warning("⚠️ Arquivo config.yaml não encontrado. Usando configurações padrão.")
+            raise FileNotFoundError
     except Exception as e:
-        st.error(f"Erro ao carregar configurações: {e}")
         # Retornar configurações padrão
         return {
             'detection': {
-                'confidence_threshold': 0.25,
-                'iou_threshold': 0.45,
+                'confidence_threshold': 0.35,
+                'iou_threshold': 0.50,
                 'max_detections': 10,
                 'image_size': 640
             },
             'visualization': {
-                'line_thickness': 2,
+                'line_thickness': 3,
                 'show_labels': True,
                 'show_confidence': True,
                 'confidence_format': 'percentage'
             },
             'performance': {
                 'use_half_precision': False,
-                'device': 'cpu'
+                'device': 'cpu',
+                'use_tensorrt': False
             }
         }
 
 @st.cache_data
 def load_training_data():
     """Carrega os dados de treinamento do CSV"""
+    results_path = get_project_root() / 'results' / 'results.csv'
     try:
-        df = pd.read_csv('results/results.csv')
-        return df
+        if results_path.exists():
+            df = pd.read_csv(results_path)
+            return df
+        else:
+            return None
     except Exception as e:
-        st.error(f"Erro ao carregar dados de treinamento: {e}")
         return None
 
 @st.cache_data
 def load_args():
     """Carrega os argumentos de treinamento do YAML"""
+    args_path = get_project_root() / 'args' / 'args.yaml'
     try:
-        with open('args/args.yaml', 'r') as f:
-            args = yaml.safe_load(f)
-        return args
+        if args_path.exists():
+            with open(args_path, 'r') as f:
+                args = yaml.safe_load(f)
+            return args
+        else:
+            return None
     except Exception as e:
-        st.error(f"Erro ao carregar configurações: {e}")
         return None
 
 @st.cache_resource
 def load_model():
     """Carrega o modelo YOLO"""
+    model_path = get_project_root() / 'weights' / 'best.pt'
     try:
+        if not model_path.exists():
+            st.error(f"❌ Modelo não encontrado em: {model_path}")
+            return None
+        
         config = load_config()
         device = config['performance'].get('device', 'cpu')
-        model = YOLO('weights/best.pt')
+        model = YOLO(str(model_path))
         model.to(device)
         return model
     except Exception as e:
-        st.error(f"Erro ao carregar modelo: {e}")
+        st.error(f"❌ Erro ao carregar modelo: {e}")
         return None
 
 def get_test_images():
     """Obtém lista de imagens de teste"""
-    images_dir = Path('images')
+    images_dir = get_project_root() / 'images'
     if images_dir.exists():
         images = list(images_dir.glob('*.png')) + list(images_dir.glob('*.jpg')) + list(images_dir.glob('*.jpeg'))
-        return [str(img) for img in images]
+        return [str(img) for img in sorted(images)]
     return []
 
 # Header principal
@@ -557,10 +577,14 @@ if selected == "Início":
     
     with col2:
         st.markdown("### 📸 Exemplos de Detecção")
-        try:
-            val_img = Image.open('results/val_batch0_pred.jpg')
-            st.image(val_img, caption="Predições de Validação", use_container_width=True)
-        except:
+        val_img_path = get_project_root() / 'results' / 'val_batch0_pred.jpg'
+        if val_img_path.exists():
+            try:
+                val_img = Image.open(val_img_path)
+                st.image(val_img, caption="Predições de Validação", use_container_width=True)
+            except:
+                st.info("Imagens de exemplo serão exibidas aqui")
+        else:
             st.info("Imagens de exemplo serão exibidas aqui")
     
     st.markdown("<hr>", unsafe_allow_html=True)
@@ -569,11 +593,13 @@ if selected == "Início":
     train_cols = st.columns(3)
     for i, col in enumerate(train_cols):
         with col:
-            try:
-                img = Image.open(f'results/train_batch{i}.jpg')
-                st.image(img, caption=f"Batch de Treinamento {i}", use_container_width=True)
-            except:
-                pass
+            train_img_path = get_project_root() / 'results' / f'train_batch{i}.jpg'
+            if train_img_path.exists():
+                try:
+                    img = Image.open(train_img_path)
+                    st.image(img, caption=f"Batch de Treinamento {i}", use_container_width=True)
+                except:
+                    pass
 
 # Página: Análise de Resultados
 elif selected == "Análise":
@@ -762,38 +788,50 @@ elif selected == "Análise":
         col1, col2 = st.columns(2)
         
         with col1:
-            try:
-                st.markdown("#### Matriz de Confusão Normalizada")
-                img = Image.open('results/confusion_matrix_normalized.png')
-                st.image(img, use_container_width=True)
-            except:
+            confusion_matrix_path = get_project_root() / 'results' / 'confusion_matrix_normalized.png'
+            if confusion_matrix_path.exists():
+                try:
+                    st.markdown("#### Matriz de Confusão Normalizada")
+                    img = Image.open(confusion_matrix_path)
+                    st.image(img, use_container_width=True)
+                except:
+                    st.info("Matriz de confusão não disponível")
+            else:
                 st.info("Matriz de confusão não disponível")
         
         with col2:
-            try:
-                st.markdown("#### Curva Precision-Recall")
-                img = Image.open('results/BoxPR_curve.png')
-                st.image(img, use_container_width=True)
-            except:
+            pr_curve_path = get_project_root() / 'results' / 'BoxPR_curve.png'
+            if pr_curve_path.exists():
+                try:
+                    st.markdown("#### Curva Precision-Recall")
+                    img = Image.open(pr_curve_path)
+                    st.image(img, use_container_width=True)
+                except:
+                    st.info("Curva PR não disponível")
+            else:
                 st.info("Curva PR não disponível")
         
         col3, col4 = st.columns(2)
         
         with col3:
-            try:
-                st.markdown("#### Curva de Precisão")
-                img = Image.open('results/BoxP_curve.png')
-                st.image(img, use_container_width=True)
-            except:
-                pass
+            p_curve_path = get_project_root() / 'results' / 'BoxP_curve.png'
+            if p_curve_path.exists():
+                try:
+                    st.markdown("#### Curva de Precisão")
+                    img = Image.open(p_curve_path)
+                    st.image(img, use_container_width=True)
+                except:
+                    pass
         
         with col4:
-            try:
-                st.markdown("#### Curva de Recall")
-                img = Image.open('results/BoxR_curve.png')
-                st.image(img, use_container_width=True)
-            except:
-                pass
+            r_curve_path = get_project_root() / 'results' / 'BoxR_curve.png'
+            if r_curve_path.exists():
+                try:
+                    st.markdown("#### Curva de Recall")
+                    img = Image.open(r_curve_path)
+                    st.image(img, use_container_width=True)
+                except:
+                    pass
 
 # Página: Testar Modelo
 elif selected == "Testar":
@@ -1002,8 +1040,8 @@ elif selected == "Testar":
                     st.markdown("#### Detecção")
                     with st.spinner("Processando..."):
                         # Salvar temporariamente
-                        temp_path = "temp_upload.jpg"
-                        image.save(temp_path)
+                        temp_path = get_project_root() / "temp_upload.jpg"
+                        image.save(str(temp_path))
                         
                         # Carregar configurações
                         config = load_config()
@@ -1017,7 +1055,7 @@ elif selected == "Testar":
                         start_time = time.time()
                         
                         results = model.predict(
-                            temp_path,
+                            str(temp_path),
                             conf=conf_threshold,
                             iou=iou_threshold,
                             imgsz=img_size,
@@ -1040,8 +1078,8 @@ elif selected == "Testar":
                             st.caption(f"⏱️ Tempo de inferência: {inference_time:.3f}s")
                         
                         # Limpar arquivo temporário
-                        if os.path.exists(temp_path):
-                            os.remove(temp_path)
+                        if temp_path.exists():
+                            temp_path.unlink()
                 
                 # Mostrar detecções
                 if len(results[0].boxes) > 0:
@@ -1210,20 +1248,14 @@ else:  # "Sobre"
             </div>
             """, unsafe_allow_html=True)
 
-# Footer
-st.markdown("""
-    <div style='margin-top: 4rem; padding-top: 2rem; border-top: 1px solid var(--border-color);'>
-        <div style='text-align: center; color: var(--text-secondary); font-family: Poppins;'>
-            <p style='font-size: 0.9em; margin: 0.5rem 0;'>
-                <span style='background: var(--accent-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-weight: 600;'>
-                DogBreed Vision
-                </span>
-                <span style='opacity: 0.6;'> · Powered by YOLOv8 & Streamlit</span>
-            </p>
-            <p style='font-size: 0.8em; opacity: 0.5; margin: 0.5rem 0;'>
-                120 breeds · mAP 84.3% · Deep Learning Portfolio Project
+# Footer - apenas nas páginas que não têm conteúdo dinâmico
+if selected in ["Início", "Sobre"]:
+    st.markdown("<br><br><br>", unsafe_allow_html=True)  # Espaçamento extra
+    st.markdown("""
+        <div style='text-align: center; color: var(--text-secondary); font-family: Poppins; padding: 2rem 0 1rem 0; margin-top: 3rem;'>
+            <p style='font-size: 0.65em; opacity: 0.35; margin: 0;'>
+                DogBreed Vision · YOLOv8 · 120 breeds · mAP 84.3%
             </p>
         </div>
-    </div>
-""", unsafe_allow_html=True)
+    """, unsafe_allow_html=True)
 
